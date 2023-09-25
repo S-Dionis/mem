@@ -1,13 +1,15 @@
 package ru.otus
 
+import ru.otus.service.CatService.CatService
 import ru.otus.service.PhotoMakerService.PhotoMakerService
 import ru.otus.service.PhotoService.PhotoService
 import zio._
 import zio.http._
 
-
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import ru.otus.service.util.test.save
+import zio.http.Header.Origin
 
 package object endpoint {
 
@@ -29,26 +31,27 @@ package object endpoint {
           result => ZIO.succeed(Response.text(result))
         )
 
-    case req@Method.GET -> Root / "photo" / "random" =>
+    case req @ Method.GET -> Root / "photo" / "random" =>
       (for {
         service <- ZIO.service[PhotoService]
-        id <- service.photoRandom()
+        id      <- service.photoRandom()
       } yield id).foldZIO(
         err =>
           for {
             _ <- Console.printLine(err).orDie
             r <- ZIO.succeed(Response.status(Status.BadRequest))
           } yield r,
-        result => ZIO.succeed(Response.text(result))
+        result =>
+          ZIO.succeed(Response.text(result))
       )
 
-    case req@Method.GET -> Root / "photo" / "from" / id / message =>
+    case req @ Method.GET -> Root / "photo" / "from" / id / message =>
       (for {
         service <- ZIO.service[PhotoService]
         msg = URLDecoder.decode(message, StandardCharsets.UTF_8.name())
-        _ <- Console.printLine(s"New photo from $id with message $msg")
-        photo <- service.photo(id)
-        create  <- service.insert(photo.photo, msg)
+        _      <- Console.printLine(s"New photo from $id with message $msg")
+        photo  <- service.photo(id)
+        create <- service.insert(photo.photo, msg)
       } yield create.id)
         .foldZIO(
           err =>
@@ -56,14 +59,15 @@ package object endpoint {
               _ <- Console.printLine(err).orDie
               r <- ZIO.succeed(Response.status(Status.BadRequest))
             } yield r,
-          result => ZIO.succeed(Response.text(result))
+          result =>
+            ZIO.succeed(Response.text(result))
         )
 
-    case req@Method.GET -> Root / "photo" / "like" / id =>
+    case req @ Method.GET -> Root / "photo" / "like" / id =>
       (for {
-        _                 <- Console.printLine(s"Like photo with id $id")
+        _       <- Console.printLine(s"Like photo with id $id")
         service <- ZIO.service[PhotoService]
-        _ <- service.like(id)
+        _       <- service.like(id)
       } yield ()).foldZIO(
         err =>
           for {
@@ -94,10 +98,31 @@ package object endpoint {
           } yield r
       )
 
-    case req@Method.GET -> Root / "top" / count =>
+    case req@Method.GET -> Root / "photo" / "raw" / id =>
+      (for {
+        _ <- Console.printLine(s"ask for photo with id $id")
+        photoService <- ZIO.service[PhotoService]
+        photo <- photoService.photo(id)
+        arr <- ZIO.succeed(photo.photo)
+      } yield arr).foldZIO(
+        err =>
+          for {
+            _ <- Console.printLine(err).orDie
+            r <- ZIO.succeed(Response.status(Status.BadRequest))
+          } yield r,
+        result =>
+          for {
+            _ <- ZIO.succeed()
+            body = Body.fromChunk(Chunk.fromArray(result))
+            r <- ZIO.succeed(Response(body = body, status = Status.Ok))
+          } yield r
+      )
+
+
+    case req @ Method.GET -> Root / "top" / count =>
       (for {
         photoService <- ZIO.service[PhotoService]
-        ids <- photoService.top(count.toInt)
+        ids          <- photoService.top(count.toInt)
       } yield ids).foldZIO(
         err =>
           for {
@@ -107,5 +132,24 @@ package object endpoint {
         result => ZIO.succeed(Response(status = Status.Ok, body = Body.fromString(result.mkString(","))))
       )
 
+    case req @ Method.GET -> Root / "cats" / "random" =>
+      (for {
+        service <- ZIO.service[CatService]
+        arr     <- service.random()
+      } yield arr).foldZIO(
+        err =>
+          for {
+            _ <- Console.printLine(err).orDie
+            r <- ZIO.succeed(Response.status(Status.BadRequest))
+          } yield r,
+        res =>
+          for {
+            _ <- ZIO.succeed()
+            body = Body.fromChunk(Chunk.fromArray(res))
+            r <- ZIO.succeed(Response(body = body, status = Status.Ok))
+          } yield r
+      )
+//    case _ =>
+//      ZIO.succeed(Response(Status.Ok, Headers.apply(Header.AccessControlAllowOrigin.Specific(Origin.apply("")),)))
   }
 }

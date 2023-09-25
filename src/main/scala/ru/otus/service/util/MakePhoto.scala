@@ -32,7 +32,7 @@ object MakePhoto {
     val div = Math.ceil(usableImageWidth / oneSymbolLen).toInt
     val splitCoefficient = message.length / div
     val messageByParts: Array[String] = toParts(message, div)
-    val messageSummaryHeight = oneRowHeight * splitCoefficient + indent
+    val messageSummaryHeight = oneRowHeight * splitCoefficient + indent * 2
     val newImage = new BufferedImage(imageOriginal.getWidth, imageOriginal.getHeight + messageSummaryHeight, imageOriginal.getType)
     val g2dNew: Graphics2D = newImage.createGraphics()
 

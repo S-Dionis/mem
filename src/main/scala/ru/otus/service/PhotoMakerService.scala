@@ -17,6 +17,6 @@ object PhotoMakerService {
 
   }
 
-  val live: ULayer[ServiceImpl] = ZLayer.succeed { ServiceImpl() }
+  val live: ULayer[PhotoMakerService] = ZLayer.succeed { ServiceImpl() }
 
 }

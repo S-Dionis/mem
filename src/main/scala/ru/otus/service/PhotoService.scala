@@ -35,7 +35,7 @@ object PhotoService {
 
     override def photoRandom(): RIO[DataSource, String] = for {
       photos <- photoRepo.list()
-      rnd <- Random.nextIntBetween(1, photos.length)
+      rnd <- Random.nextIntBetween(0, photos.length)
       photo <- ZIO.attempt(photos(rnd))
     } yield photo
 

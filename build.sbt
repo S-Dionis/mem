@@ -11,3 +11,4 @@ libraryDependencies ++= Dependencies.zio
 libraryDependencies ++= Dependencies.postgres
 libraryDependencies ++= Dependencies.liquibase
 libraryDependencies ++= Dependencies.quill
+libraryDependencies ++= Dependencies.sprayJson
